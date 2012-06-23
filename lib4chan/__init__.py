@@ -7,7 +7,7 @@ import requests
 DOMAIN_BASE = '4chan.org'
 DOMAIN_BOARD = 'boards.%s' % DOMAIN_BASE
 DOMAIN_IMAGES = 'images.%s' % DOMAIN_BASE
-DOMAIN_WEB = 'www.%s' DOMAIN_BASE
+DOMAIN_WEB = 'www.%s' % DOMAIN_BASE
 
 URL_BOARD = 'http://{domain_board}/{slug}/'
 URL_BOARD_PAGE = URL_BOARD + '{page}'
@@ -27,6 +27,9 @@ class SoupObject(object):
             else:
                 raise RequestError(req)
         return self._soup
+
+    def refresh(self):
+        self._soup = None
 
 class Board(SoupObject):
     _pages = None
@@ -63,13 +66,15 @@ class Board(SoupObject):
         return len(self._pages)
 
     def get_page(self, page):
-        if self._pages[page] is None
+        if self._pages[page] is None:
             #this should be a weakref
             self._pages[page] = BoardPage(self, page)
         return self._pages[page]
 
 
 class BoardPage(SoupObject):
+    threads = None
+
     def __init__(self, board, page):
         self._board = board
         self.page = page
@@ -82,8 +87,8 @@ class BoardPage(SoupObject):
             page=self.page)
 
     def get_threads(self):
-        pass
-
+        return [Thread(self._board, int(tag['id'].lstrip('t'))) \
+            for tag in self._get_soup().find_all('div', 'thread')]
 
 class Thread(SoupObject):
     posts = None
@@ -98,6 +103,10 @@ class Thread(SoupObject):
             domain_board=DOMAIN_BOARD,
             slug=self._board.slug,
             thread_id=self.id)
+
+    def get_posts(self):
+        return [Post(self, int(tag['id'].lstrip('pc'))) \
+            for tag in self._get_soup().find_all('div', 'postContainer')]
 
 class Post(SoupObject):
     def __init__(self, thread, id):
