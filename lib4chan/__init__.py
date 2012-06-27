@@ -38,21 +38,6 @@ class Board(SoupObject):
         self.slug = slug
         self._pages = [None for p in self.page_count]
 
-    def __len__(self):
-        return self.page_count
-
-    def __getitem__(self, key):
-        return self._pages[key]
-
-    def __iter__(self):
-        return iter(self._pages)
-
-    def __contains__(self, item):
-        return item in self._pages.values()
-
-    def count(self):
-        return len(self)
-
     @property
     def url(self):
         return URL_BOARD.format(
@@ -62,8 +47,13 @@ class Board(SoupObject):
     @property
     def page_count(self):
         if self._pages is None:
-            pass
+            return 10
         return len(self._pages)
+
+    def __len__(self):
+        return self.page_count
+
+    count = __len__
 
     def get_page(self, page):
         if self._pages[page] is None:
@@ -71,6 +61,13 @@ class Board(SoupObject):
             self._pages[page] = BoardPage(self, page)
         return self._pages[page]
 
+    __getitem__ = get_page
+
+    def __iter__(self):
+        return iter(self._pages)
+
+    def __contains__(self, item):
+        return item in self._pages.values()
 
 class BoardPage(SoupObject):
     threads = None
